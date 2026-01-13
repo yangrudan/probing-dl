@@ -171,3 +171,26 @@ pub enum Commands {
     #[command(subcommand = false, hide = true)]
     Store(StoreCommand),
 }
+
+impl Commands {
+    /// Determines whether this command should have a timeout applied.
+    /// Long-running or interactive commands should return false.
+    pub fn should_timeout(&self) -> bool {
+        match self {
+            // Long-running or interactive commands - no timeout
+            Commands::Repl => false,
+            Commands::Launch { .. } => false,
+            Commands::External(_) => false,
+            // Short-running commands - apply timeout
+            Commands::List { .. } => true,
+            Commands::Config { .. } => true,
+            Commands::Backtrace { .. } => true,
+            Commands::Rdma { .. } => true,
+            Commands::Eval { .. } => true,
+            Commands::Query { .. } => true,
+            Commands::Store(_) => true,
+            #[cfg(target_os = "linux")]
+            Commands::Inject(_) => true,
+        }
+    }
+}

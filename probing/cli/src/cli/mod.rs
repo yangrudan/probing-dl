@@ -56,6 +56,12 @@ pub struct Cli {
 }
 
 impl Cli {
+    /// Determines whether this command should have a timeout applied.
+    /// Long-running or interactive commands should return false.
+    pub fn should_timeout(&self) -> bool {
+        self.command.as_ref().map_or(true, |cmd| cmd.should_timeout())
+    }
+
     pub async fn run(&mut self) -> Result<()> {
         // Handle external commands first to avoid target requirement
         if let Some(Commands::External(args)) = &self.command {
