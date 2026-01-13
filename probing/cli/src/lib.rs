@@ -15,8 +15,16 @@ const ENV_PROBING_LOGLEVEL: &str = "PROBING_LOGLEVEL";
 /// Main entry point for the CLI, can be called from Python or as a binary
 pub async fn cli_main(args: Vec<String>) -> Result<()> {
     let _ = env_logger::try_init_from_env(Env::new().filter(ENV_PROBING_LOGLEVEL));
-    match timeout(Duration::from_secs(10), cli::Cli::parse_from(args).run()).await {
-        Ok(result) => result,
-        Err(_) => Err(anyhow::anyhow!("CLI command timed out")),
+    // Note: CLI is mutable because run() requires &mut self
+    let mut cli = cli::Cli::parse_from(args);
+    
+    // Only apply timeout to commands that should have it
+    if cli.should_timeout() {
+        match timeout(Duration::from_secs(10), cli.run()).await {
+            Ok(result) => result,
+            Err(_) => Err(anyhow::anyhow!("CLI command timed out")),
+        }
+    } else {
+        cli.run().await
     }
 }
